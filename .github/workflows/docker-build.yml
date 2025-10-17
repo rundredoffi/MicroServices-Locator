@@ -74,10 +74,10 @@ jobs:
 
     - name: Build docker-compose stack
       run: |
-        docker-compose config --quiet
+        docker compose config --quiet
         echo "✅ Docker Compose configuration is valid"
 
     - name: Test docker-compose build
       run: |
-        docker-compose build --parallel
+        docker compose build --parallel
         echo "✅ All images built successfully"
