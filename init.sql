@@ -1,0 +1,2 @@
+CREATE DATABASE IF NOT EXISTS msuser_db;
+USE msuser_db;

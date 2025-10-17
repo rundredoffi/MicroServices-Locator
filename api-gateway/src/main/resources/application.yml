@@ -1,0 +1,52 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Route vers MS-User
+        - id: ms-user
+          uri: http://ms-user:8080
+          predicates:
+            - Path=/msuser/**
+          filters:
+            - StripPrefix=1
+        
+        # Route vers MS-Locations
+        - id: ms-locations
+          uri: http://ms-locations:8081
+          predicates:
+            - Path=/mslocation/**
+          filters:
+            - StripPrefix=1
+      
+      # Configuration globale
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+            allowedHeaders: "*"
+
+# Configuration Actuator pour monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+# Logs
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: INFO

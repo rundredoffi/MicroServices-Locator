@@ -1,0 +1,12 @@
+# Maven
+target/
+*.jar
+*.war
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Build
+bin/
