@@ -25,11 +25,14 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
+# Créer le répertoire de configuration
+RUN mkdir -p /app/config
+
 # Copie du JAR depuis l'étape de build
 COPY --from=build /app/target/msuser-0.0.1-SNAPSHOT.jar app.jar
 
 # Exposition du port 8080
 EXPOSE 8080
 
-# Commande pour lancer l'application
-CMD ["java", "-jar", "app.jar"]
+# Commande pour lancer l'application avec configuration externe
+CMD ["java", "-jar", "app.jar", "--spring.config.location=file:/app/config/application.yml"]

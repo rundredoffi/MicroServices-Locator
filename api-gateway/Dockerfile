@@ -23,11 +23,14 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
+# Créer le répertoire de configuration
+RUN mkdir -p /app/config
+
 # Copier le JAR depuis l'étape de build
 COPY --from=build /app/target/api-gateway-0.0.1-SNAPSHOT.jar app.jar
 
 # Port d'exposition
 EXPOSE 8888
 
-# Lancer l'application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Lancer l'application avec configuration externe
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=file:/app/config/application.yml"]
