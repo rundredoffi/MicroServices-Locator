@@ -1,17 +1,23 @@
 package com.micros.msuser.model;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "\"user\"")
-public class User extends PanacheEntity {
+public class User {
 
-    public String nom;
-    public String prenom;
-    public String email;
-    public String password;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String nom;
+    private String prenom;
+    private String email;
+    private String password;
 
     public User() {
     }
@@ -21,6 +27,15 @@ public class User extends PanacheEntity {
         this.prenom = prenom;
         this.email = email;
         this.password = password;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNom() {
