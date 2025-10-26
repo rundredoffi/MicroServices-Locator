@@ -1,86 +1,161 @@
-# Architecture Microservices avec API Gateway
+# Architecture Microservices
 
-## Vue d'ensemble
+## Description
 
-Cette architecture comprend 3 microservices avec Spring Boot, 2 bases de données MySQL et une API Gateway pour le routage.
+Projet d'architecture microservices avec Spring Boot comprenant une API Gateway et deux microservices : gestion des utilisateurs et gestion des localisations GPS.
+
+## Technologies utilisées
+
+- Spring Boot 3.x
+- Spring Cloud Gateway
+- MySQL 8.0
+- Apache Kafka
+- Docker & Docker Compose
+- GraphQL
 
 ## Architecture
 
 ```
-                     Client (Browser/Postman)
-                                |
-                            Port 8888
-                                |
-                          API GATEWAY
-                         (Spring Cloud)
-                        /             \
-                       /               \
-                /msuser/**        /mslocation/**
-                     |                  |
-                  ms-user          ms-locations
-                 (port 8080)       (port 8081)
-                     |                  |
-                  user-db           location-db
-                 (MySQL 8.0)        (MySQL 8.0)
+Client
+  |
+API Gateway (8888)
+  |
+  +-- MS-User (8080) -- MySQL (user-db)
+  |
+  +-- MS-Locations (8081) -- MySQL (location-db) -- Kafka
 ```
 
-## Réseaux Docker
+## Microservices
 
-- **gateway_net** : Réseau partagé pour communication entre microservices
-- **user_net** : Réseau privé isolé pour MS-User ↔ user-db
-- **location_net** : Réseau privé isolé pour MS-Locations ↔ location-db
+### API Gateway (Port 8888)
+Point d'entrée unique pour tous les services. Route les requêtes vers les microservices appropriés.
 
-## Services
+**Configuration:**
+- Framework: Spring Cloud Gateway
+- Routage: /msuser/** vers MS-User, /mslocation/** vers MS-Locations
+- CORS: Activé pour tous les endpoints
 
-### 1. API Gateway (Port 8888)
-- **Framework** : Spring Cloud Gateway
-- **Version** : Spring Boot 3.4.5 + Spring Cloud 2024.0.0
-- **Rôle** : Point d'entrée unique, routage des requêtes
+### MS-User (Port 8080)
+Gestion des utilisateurs avec support REST et GraphQL.
 
-**Routes configurées :**
-- `/msuser/**` → http://ms-user:8080
-- `/mslocation/**` → http://ms-locations:8081
+**Base de données:** MySQL (user-db)
 
-### 2. MS-User (Port 8080)
-- **Framework** : Spring Boot 3.5.6
-- **Base de données** : user-db (MySQL 8.0)
-- **Entité** : User (id, nom, prenom, email, password)
+**APIs disponibles:**
 
-**Endpoints via Gateway :**
+REST classique:
 ```
-POST   http://localhost:8888/msuser/users/add
-       Body: nom, prenom, email, password
+GET    /users/all
+GET    /users/{id}
+POST   /users/add
 ```
 
-**Endpoints directs :**
+REST-GraphQL:
 ```
-POST   http://localhost:8080/users/add
-```
-
-### 3. MS-Locations (Port 8081)
-- **Framework** : Spring Boot 3.5.6
-- **Base de données** : location-db (MySQL 8.0)
-- **Entité** : Location (id, latitude, longitude, timestamp, userId)
-
-**Endpoints via Gateway :**
-```
-POST   http://localhost:8888/mslocation/locations/add
-       Body: latitude, longitude, userId (optionnel)
-
-GET    http://localhost:8888/mslocation/locations/all
-       Retourne toutes les localisations
-
-GET    http://localhost:8888/mslocation/locations/user/{userId}
-       Retourne les localisations d'un utilisateur
-
-GET    http://localhost:8888/mslocation/locations/{id}
-       Retourne une localisation par ID
+GET    /graphql/users
+GET    /graphql/users/{id}
+POST   /graphql/add
+PUT    /graphql/users/{id}
+DELETE /graphql/users/{id}
 ```
 
-**Endpoints directs :**
+GraphQL natif:
 ```
-POST   http://localhost:8081/locations/add
-GET    http://localhost:8081/locations/all
-GET    http://localhost:8081/locations/user/{userId}
-GET    http://localhost:8081/locations/{id}
+POST   /graphql
+Body: {"query": "{ users { id nom prenom email } }"}
+```
+
+### MS-Locations (Port 8081)
+Gestion des localisations GPS avec détection de proximité en temps réel via Kafka.
+
+**Base de données:** MySQL (location-db)
+
+**APIs disponibles:**
+```
+GET    /locations/all
+GET    /locations/{id}
+GET    /locations/user/{userId}
+POST   /locations/add
+```
+
+**Fonctionnalités:**
+- Stockage des coordonnées GPS
+- Détection de proximité entre utilisateurs
+- Notifications via Kafka (topic: proximity-alerts)
+
+## Démarrage
+
+### Prérequis
+- Docker
+- Docker Compose
+- Ports disponibles: 8080, 8081, 8888, 3306, 9092
+
+### Lancement
+```bash
+docker compose up -d
+```
+
+### Vérification
+```bash
+docker ps
+```
+
+Tous les conteneurs doivent être en état "Up" ou "Healthy".
+
+## Tests avec Postman
+
+### Créer un utilisateur
+```http
+POST http://localhost:8888/msuser/users/add
+Content-Type: application/json
+
+{
+  "nom": "Dupont",
+  "prenom": "Jean",
+  "email": "jean@example.com",
+  "password": "pwd123"
+}
+```
+
+### Ajouter une localisation
+```http
+POST http://localhost:8888/mslocation/locations/add
+Content-Type: application/json
+
+{
+  "latitude": 48.8566,
+  "longitude": 2.3522,
+  "userId": 1
+}
+```
+
+### Requête GraphQL
+```http
+POST http://localhost:8888/msuser/graphql
+Content-Type: application/json
+
+{
+  "query": "{ users { id nom prenom email } }"
+}
+```
+
+## Kafka
+
+Accès au topic des alertes de proximité:
+```bash
+docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic proximity-alerts \
+  --from-beginning
+```
+
+## Structure du projet
+
+```
+.
+├── api-gateway/          # API Gateway Spring Cloud
+├── msuser/              # Microservice Utilisateurs
+├── ms-locations/        # Microservice Localisations
+├── config/              # Fichiers de configuration
+├── docker-compose.yml   # Configuration Docker
+└── README.md
 ```
