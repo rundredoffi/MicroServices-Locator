@@ -11,6 +11,11 @@ import com.micros.msuser.repository.UserRepository;
 
 import java.util.Optional;
 
+/**
+ * REST Controller for User management
+ * Note: GraphQL API is also available at /graphql endpoint
+ * This REST API is kept for backward compatibility
+ */
 @Controller
 @RequestMapping(path="/users")
 public class UserController {
